@@ -4,12 +4,14 @@ function [dict, coef, summary] = DL_BCD(data, options)
 %   data    : K by N matrix
 %   options : struct, parameter settings.
 %             MAXITER - maximum number of iterations
-%             dict    - initial dict
+%             dict    - initial dict.
 %             thres1  - double, default 1e-5, threshold for recognizing zeros
 %             thres2  - double, default inf, threshold to be neglected
 %             method  - string, default bfgs, method to optimize the subproblem.
 %                           can also be grad, gradient descent.
 %             is_sharp- bool, default true, check whether the local minimum is sharp.
+%             random  - bool, default false, whether randomly permute
+%                 coordinats for each iteration.
 %             verbose - int, default 0, the higher the more detailed output
 %
 % Output:
@@ -55,6 +57,10 @@ if isfield(options, 'is_sharp')
 else
     options.is_sharp = true;
 end
+if isfield(options, 'random')
+else
+    options.random = false;
+end
 if isfield(options, 'method')
     if strcmp(options.method, 'bfgs')
         bfgs = true;
@@ -98,7 +104,13 @@ for iter = 1:MAXITER
     if verbose > 0
         fprintf('Iter %d', iter)
     end
+    if options.random
+        ordered = [1, randperm(K-1)+1] ;% always start from 1 to avoid prev ordered[K] = new ordered[1]
+    end
     for j = 1:K
+        if options.random
+            j = ordered(j);
+        end
         % Preparation
         if iter == 1
             %add a small noise around initial dict

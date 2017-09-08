@@ -104,7 +104,7 @@ problem.L = L;
 %% Build the dictionary
 
 %Draw randomly
-if true
+if false
     mu = optIn.mu;
     A = (ones(M,N)*mu + (1 - mu)*eye(M))^.5; %WARN: I have changed this part.
 else
@@ -302,7 +302,6 @@ if tryBCD1
     bcd_option.thres1 = 1e-6;
     bcd_option.verbose = 0;
     bcd_option.thres2 = .5;
-    bcd_ratio = 1;
     
     spams_param2 = [];
     spams_param2.K = N;
@@ -319,7 +318,7 @@ if tryBCD1
         
         %Do it   
         %bcd_option.dict = mexTrainDL(Y,spams_param2);
-        A_bcdTemp = DL_BCD(Y(:,randsample(L, ceil(L*bcd_ratio))),bcd_option);
+        A_bcdTemp = DL_BCD_global(Y, 3, 'orth');
         
         
         BCDerrorTemp = dictionary_error_function(A_bcdTemp);
