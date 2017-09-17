@@ -45,11 +45,13 @@ for iter = 1:MAXTRIAL
     if strcmp(init, 'orth')
         options.dict = orth(randn(K,K)); % initial dict
     elseif strcmp(init, 'rand')
+        options.dict = normalize_columns(randn(K,K));
+    elseif strcmp(init, 'randcol')
         options.dict = normalize_columns(data(:,randperm(N, K)));%FIXME: might not have full rank.
     elseif strcmp(init, 'L1')
         options.dict = orth(randn(K,K)); % initial dict via orthogonal matrix
         options.thres2 = inf;
-        [dict, coef, summary] = DL_BCD(data, options);
+        [dict, ~, ~] = DL_BCD(data, options);
         options.dict = dict;
     elseif strcmp(init, 'spams')
         spams_param = [];

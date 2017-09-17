@@ -14,7 +14,7 @@ iter1 = nan(N, N_trials);
 s = 4;
 mu = 0.7;
 for i = 1:N
-    samplesize = 1000;
+    samplesize = 400;
     for j = 1:N_trials
         disp(j);
     true_coef  = randn(K, samplesize);
@@ -38,3 +38,13 @@ end
 disp(dist);
 disp(iter1);
 disp(testtime1);
+%%
+subplot(1,2,1)
+hist(iter1)
+xlabel('Number of iterations')
+ylabel('Frequency')
+%%
+subplot(1,2,2)
+boxplot(testtime1, iter1)
+xlabel('Number of iterations')
+ylabel('Timing (sec)')
