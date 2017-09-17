@@ -295,49 +295,16 @@ end
 
 
 if tryBCD1
-    
-    %Build params
-    bcd_option = [];
-    bcd_option.MAXITER = 100;
-    bcd_option.thres1 = 1e-6;
-    bcd_option.verbose = 0;
-    bcd_option.thres2 = .5;
-    
-    spams_param2 = [];
-    spams_param2.K = N;
-    spams_param2.mode = 2;
-    spams_param2.lambda = 1/sqrt(N);%changed bigger
-    spams_param2.iter = 100;%changed smaller
-    spams_param2.verbose = 0;
-    
     %Trials
-    bestBCDerror = inf;
-    
     tstart = tic;
-    for trial = 1:maxTrials
-        
-        %Do it   
-        %bcd_option.dict = mexTrainDL(Y,spams_param2);
-        A_bcdTemp = DL_BCD_global(Y, 3, 'orth');
-        
-        
-        BCDerrorTemp = dictionary_error_function(A_bcdTemp);
-        
-        %Update the estimate if this result was superior
-        if BCDerrorTemp < bestBCDerror
-            BCDerror = BCDerrorTemp;
-            bestBCDerror = BCDerror;
-            A_bcd = A_bcdTemp;
-            disp(['Updating Solution. BCD Error was: '...
-                num2str(BCDerror) ' dB'])
-        end
-        
-    end
+    A_bcd = DL_BCD_global(Y, maxTrials, 'L1', .5);
+    BCDerror = dictionary_error_function(A_bcd);
     tbcd = toc(tstart);
-    
+    disp(['Updating Solution. BCD Error was: '...
+          num2str(BCDerror) ' dB'])
     %Save results
     loc = length(results) + 1;
-    results{loc}.name = 'BCD .5'; %#ok<*AGROW>
+    results{loc}.name = 'BCD \tau = .5'; %#ok<*AGROW>
     results{loc}.err = dictionary_error_function(A_bcd);
     results{loc}.time = tbcd;
     results{loc}.errHist = results{loc}.err;
@@ -350,64 +317,26 @@ if tryBCD1
     
 end
 
-%% DL BCD1
+%% DL BCD2
 
 
 if tryBCD2
-    
-    %Build params
-    bcd_option = [];
-    bcd_option.MAXITER = 100;
-    bcd_option.thres1 = 1e-6;
-    bcd_option.verbose = 0;
-    bcd_option.thres2 = inf;
-    bcd_ratio = 1;
-    
-    spams_param2 = [];
-    spams_param2.K = N;
-    spams_param2.mode = 2;
-    spams_param2.lambda = 1/sqrt(N);%changed bigger
-    spams_param2.iter = 100;%changed smaller
-    spams_param2.verbose = 0;
-    
-    %Trials
-    bestBCDerror = inf;
-    
     tstart = tic;
-    for trial = 1:maxTrials
-        
-        %Do it   
-        %bcd_option.dict = mexTrainDL(Y,spams_param2);
-        A_bcdTemp = DL_BCD(Y(:,randsample(L, ceil(L*bcd_ratio))),bcd_option);
-        
-        
-        BCDerrorTemp = dictionary_error_function(A_bcdTemp);
-        
-        %Update the estimate if this result was superior
-        if BCDerrorTemp < bestBCDerror
-            BCDerror = BCDerrorTemp;
-            bestBCDerror = BCDerror;
-            A_bcd = A_bcdTemp;
-            disp(['Updating Solution. BCD Error was: '...
-                num2str(BCDerror) ' dB'])
-        end
-        
-    end
-    tbcd = toc(tstart);
+    A_bcd2 = DL_BCD_global(Y, maxTrials, 'rand', inf);
+    BCD2error = dictionary_error_function(A_bcd2);
+    disp(['Updating Solution. BCD Error was: '...
+          num2str(BCD2error) ' dB'])
+    tbcd2 = toc(tstart);
     
     %Save results
     loc = length(results) + 1;
-    results{loc}.name = 'BCD infinity'; %#ok<*AGROW>
-    results{loc}.err = dictionary_error_function(A_bcd);
-    results{loc}.time = tbcd;
-    results{loc}.errHist = results{loc}.err;
-    results{loc}.timeHist = zeros(size(results{loc}.errHist));
-    results{loc}.dict = A_bcd;
+    results{loc}.name = 'BCD \tau = infinity'; %#ok<*AGROW>
+    results{loc}.err = dictionary_error_function(A_bcd2);
+    results{loc}.time = tbcd2;
+    results{loc}.dict = A_bcd2;
     results{loc}.dictError = dictionary_error_function(results{loc}.dict);
     results{loc}.codingError =...
         coding_error_function(results{loc}.dict);
-    
-    
 end
 
 
@@ -415,9 +344,6 @@ end
 
 
 if tryErspud
-    
-    
-    
     %Call it
     tic
     %[Aerspud,Xerspud] = ER_SpUD_SC(Y);
@@ -435,9 +361,6 @@ if tryErspud
     results{loc}.dictError = dictionary_error_function(results{loc}.dict);
     results{loc}.codingError =...
         coding_error_function(results{loc}.dict);
-    
-    
-    
 end
 
 
@@ -493,9 +416,6 @@ if tryKsvd
     
     
 end
-
-
-
 
 %% Store the options structures in results
 results{1}.optIn = optIn;
