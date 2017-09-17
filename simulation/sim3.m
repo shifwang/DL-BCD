@@ -5,13 +5,13 @@ addpath(genpath('../externs/'))
 %%
 K  = 10; % dimension
 N  = 1; % number of candidate sample sizes
-N_trials = 10; % number of trials
+N_trials = 100; % number of trials
 dist = nan(N, N_trials);
 success = nan(N, N_trials);
 testtime1 = nan(N, N_trials);
 iter1 = nan(N, N_trials);
 %samplesize = 2000;        
-s = 7;
+s = 4;
 mu = 0.7;
 for i = 1:N
     samplesize = 1000;
@@ -28,8 +28,8 @@ for i = 1:N
         @(q) 20*log10(norm(true_dict -...
             q * find_permutation(true_dict,q),'fro')/norm(true_dict,'fro'));
     data       = true_dict * true_coef;
-    [dict, coef, out] = DL_BCD_global(data, 5, 'orth');
-    dist(i, j) = dictionary_error_function(dict)
+    [dict, coef, out] = DL_BCD_global(data, 5, 'L1', .5);
+    dist(i, j) = dictionary_error_function(dict);
     testtime1(i, j) = out.timing;
     iter1(i, j) = out.iter;
     success(i, j) = out.success;

@@ -6,15 +6,7 @@ test = tic;
 max_dist = 0;
 K = size(coef, 1);
 N = size(coef, 2);
-for j = 1:K
-    remaining = coef(:,abs(coef(j,:)) < 10*thres1);
-    eigen_values = eig(remaining * remaining');
-    if eigen_values(2) <= 10 * eigen_values(1)
-        max_dist = inf;
-        time = toc(test);
-        return
-    end
-end
+dict = dict + slope*randn(size(dict));%permute the dictionary
 for j = 1:K
     % Check rank condition
     % Preparation
@@ -22,8 +14,6 @@ for j = 1:K
     x(j) = 1;
     obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
     m = dict(:, j)' * dict;
-    added_noise = (m'.* sum(abs(coef),2) + coef * sign(coef(j,:)'))./sum(abs(coef),2);
-    m = m + slope/(1 - slope) * added_noise';
     m(j) = 0;
     if max(abs(m))>=1
         warning('the maximum of m is %.1f > 1, consider a small slope.',max(abs(m)));

@@ -1,14 +1,19 @@
-function [dict, coef, out] = DL_BCD_global(data, MAXTRIAL, init, thres2)
+function [best_dict, best_coef, out] = DL_BCD_global(data, MAXTRIAL, init, thres2)
 % Complete Dictionary Learning through L1 minimization
 % Input:
 %   data    : K by N matrix
 %   MAXTRIAL: double, maximum number of trials
 %   init    : string, how to select initial dict
-%   thres   : double, truncated L1 threshold
+%   thres2  : double, truncated L1 threshold
 %
 % Output:
-%   dict    : K by K matrix, learned dictionary
-%   coef    : K by N matrix, coefficient matrix
+%   best_dict    : K by K matrix, learned dictionary
+%   best_coef    : K by N matrix, coefficient matrix
+%   out          : struct, info of the algorithm
+%                    iter: int, how many iterations
+%                    success: double, how much distance when perturbing
+%                      the dictionary
+%                    timing: double, the time of the process.
 % by Yu Wang, wang.yu@berkeley.edu
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -33,6 +38,9 @@ out.iter = nan;
 %%       Main body        %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 start = tic;
+best_dict = 1;
+best_coef = 1;
+best_max_dist = inf;
 for iter = 1:MAXTRIAL
     if strcmp(init, 'orth')
         options.dict = orth(randn(K,K)); % initial dict
@@ -56,11 +64,16 @@ for iter = 1:MAXTRIAL
     end
     options.thres2 = thres2; % threshold 2 that truncates 
     [dict, coef, summary] = DL_BCD(data, options);
+    if best_max_dist > summary.max_dist
+        best_max_dist = summary.max_dist;
+        best_dict = dict;
+        best_coef = coef;
+    end
     if summary.max_dist < 1e-9
         break;
     end
 end
-out.success = summary.max_dist;
+out.success = best_max_dist;
 out.timing = toc(start);
 out.iter = iter;
 
