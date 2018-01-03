@@ -26,6 +26,7 @@ options.is_sharp = true; % test if the result is sharp
 options.method = 'bfgs'; % use bfgs to solve sub-problem
 options.verbose = 0; % suppress output
 options.random = 0;
+options.subsample = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Prepare the output    %%
@@ -51,7 +52,9 @@ for iter = 1:MAXTRIAL
     elseif strcmp(init, 'L1')
         options.dict = orth(randn(K,K)); % initial dict via orthogonal matrix
         options.thres2 = inf;
+        %options.subsample = .5;
         [dict, ~, ~] = DL_BCD(data, options);
+        %options.subsample = 1;
         options.dict = dict;
     elseif strcmp(init, 'spams')
         spams_param = [];

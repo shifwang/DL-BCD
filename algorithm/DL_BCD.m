@@ -12,6 +12,8 @@ function [dict, coef, summary] = DL_BCD(data, options)
 %             is_sharp- bool, default true, check whether the local minimum is sharp.
 %             random  - bool, default false, whether randomly permute
 %                 coordinats for each iteration.
+%             subsample - double between 0 and 1,  do subsampling
+%                 for each iteration, 1 means no subsampling.
 %             verbose - int, default 0, the higher the more detailed output
 %
 % Output:
@@ -60,6 +62,10 @@ end
 if isfield(options, 'random')
 else
     options.random = false;
+end
+if isfield(options, 'subsample')
+else
+    options.subsample = 1;
 end
 if isfield(options, 'method')
     if strcmp(options.method, 'bfgs')
@@ -111,6 +117,11 @@ for iter = 1:MAXITER
         if options.random
             j = ordered(j);
         end
+        if options.subsample ~= 1
+            ratio = options.subsample + (1 - options.subsample)/MAXITER * iter;
+            coef = coef(:,randi(N, 1, floor(N * ratio)));
+        end
+            
         % Preparation
         if iter == 1
             %add a small noise around initial dict
