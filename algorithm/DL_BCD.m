@@ -6,7 +6,9 @@ function [dict, coef, summary] = DL_BCD(data, options)
 %             MAXITER - maximum number of iterations
 %             dict    - initial dict.
 %             thres1  - double, default 1e-5, threshold for recognizing zeros
-%             thres2  - double, default inf, threshold to be neglected
+%             thres2  - double, default inf, threshold to be neglected,
+%                           if adaptive is true, this would be interprated
+%                           as a value between 0 and 1, the proportion.
 %             method  - string, default bfgs, method to optimize the subproblem.
 %                           can also be grad, gradient descent.
 %             is_sharp- bool, default true, check whether the local minimum is sharp.
@@ -14,7 +16,9 @@ function [dict, coef, summary] = DL_BCD(data, options)
 %                 coordinats for each iteration.
 %             subsample - double between 0 and 1,  do subsampling
 %                 for each iteration, 1 means no subsampling.
+%             adaptive- bool, default false, whether use adaptive thres2.
 %             verbose - int, default 0, the higher the more detailed output
+%
 %
 % Output:
 %   dict    : K by K matrix, learned dictionary
@@ -54,6 +58,14 @@ if isfield(options, 'thres2')
     thres2 = options.thres2;
 else
     thres2 = inf;
+end
+if isfield(options, 'adaptive')
+    adaptive = options.adaptive;
+else
+    adaptive = false;
+end
+if adaptive
+    assert(thres2 <= 1, sprintf('Thres2 should <=1 when allowing adaptive but %e given.',thres2))
 end
 if isfield(options, 'is_sharp')
 else
@@ -133,20 +145,38 @@ for iter = 1:MAXITER
         x(j) = 1;
         m = dict(:, j)' * dict;
         m(j) = 0;
-        obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
+        if adaptive
+            obj_per_feature = zeros(K,1);
+            for feature = 1:K
+                f_val = abs(coef(feature,:));
+                adapt_thres2 = quantile(f_val(f_val > thres1), thres2);
+                obj_per_feature(feature) = sum(min(f_val, adapt_thres2))/N;
+            end
+        else
+            obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
+        end
         %Update dual vector
         % Formulation for j = 1: minimize
         %   E| c1 + c2 x2 + ... + cK xK| + E|c2| sqrt((x2 - m2)^2 + 1 -
         %   m^2) + ... + E|cK| sqrt((xK - mK)^2 + 1 - mK^2)
         % where ci is the coefficients, mi is the cosine of atom i and 1.
         if bfgs
+            % calculate the adaptive thres2
+            if adaptive
+                f_val = abs(coef(feature,:));
+                adapt_thres2 = quantile(f_val(f_val > thres1), thres2);
+                obj_per_feature(feature) = sum(min(f_val, adapt_thres2))/N;
+            else
+                adapt_thres2 = thres2;
+            end
             B = eye(K);
             stepsize = 1;
             ABSTOL   = 1e-14;
             bigger = 1.2;
             smaller = .1;
             percent = 0.1;
-            not_one = abs(coef(j,:)) < thres2;
+            
+            not_one = abs(coef(j,:)) < adapt_thres2;
             flag = nan;
             for inner_iter = 1:1000
                 if verbose > 1
@@ -246,8 +276,9 @@ for iter = 1:MAXITER
             error('Optimization method not recognized')
         end
         if verbose > 1
-            fprintf('stepsize:%6.3e, inner_iter:%d, max gradient:%6.3e',stepsize, inner_iter, max(abs(grad)));
-            fprintf('objective %6.3e', obj_new);
+            fprintf('stepsize:%6.1e, inner_iter:%d, max gradient:%6.3e\n',stepsize, inner_iter, max(abs(grad)));
+            fprintf('objective %6.2e\n', obj_new);
+            fprintf('adapt_thres2 %6.1e\n', adapt_thres2)
         end
         % Update dict and coef
         invD(j,:) = x * invD;
@@ -258,7 +289,11 @@ for iter = 1:MAXITER
         end
         coef = invD * data;
         dict = inv(invD);
-        obj  = sum(sum(min(abs(coef), thres2)))/N;
+        if ~adaptive
+            obj  = sum(sum(min(abs(coef), thres2)))/N;
+        else
+            obj = mean(mean(abs(coef) < thres1))*K; %Not useful when using obj
+        end
         % summary
         summary.flag(j, iter) = flag;
     end
@@ -268,8 +303,10 @@ for iter = 1:MAXITER
     summary.obj_val(iter) = obj;
     summary.n_zero(iter) = mean(mean(abs(coef) < thres1));
     if iter > 1
-        if summary.obj_val(iter-1) - summary.obj_val(iter) < ABSTOL
-            break;
+        if ~adaptive
+            if summary.obj_val(iter-1) - summary.obj_val(iter) < ABSTOL
+                break;
+            end
         end
     end
 end
