@@ -30,7 +30,7 @@ for i = 1:N
     end
 end
 f = @(p, x) exp(p(1) * x + p(2))./(1 + exp(p(1)*x + p(2)));
-x = linspace((K+1) * 10, 30 * K, 10);
+x = linspace((K+1) * 10, 30 * K, 2*K);
 y = mean(success1,2);
 para = nlinfit(x', y, f, [.01, -6]);
 middles = [middles, round(-para(2)/para(1))];
