@@ -1,9 +1,10 @@
 addpath(genpath('../AMP/'))
 addpath('../algorithm/')
 addpath(genpath('../externs/'))
+feature('numThreads',4)
 %%
 middles = [];
-for K = 10:5:20
+for K = 10:5:12
 N  = 2 * K; % number of candidate sample sizes
 N_trials = 40; % number of trials
 success1 = nan(N, N_trials);
@@ -29,7 +30,7 @@ for i = 1:N
     end
 end
 f = @(p, x) exp(p(1) * x + p(2))./(1 + exp(p(1)*x + p(2)));
-x = linspace(50, N*50, N);
+x = linspace((K+1) * 10, 30 * K, 10);
 y = mean(success1,2);
 para = nlinfit(x', y, f, [.01, -6]);
 middles = [middles, round(-para(2)/para(1))];
