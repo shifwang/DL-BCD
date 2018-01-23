@@ -3,14 +3,14 @@ addpath('../algorithm/')
 addpath(genpath('../externs/'))
 %%
 middles = [];
-for K = 10:2:24
-N  = 20; % number of candidate sample sizes
+for K = 10:5:20
+N  = 2 * K; % number of candidate sample sizes
 N_trials = 40; % number of trials
 success1 = nan(N, N_trials);
 s = round(.5 * K);
 mu = ((K - s)/(K - 1) - 0.2)/sqrt(s);
 for i = 1:N    
-    samplesize = i*50;
+    samplesize = 20 * K + (i - K)*10;
     for j = 1:N_trials
     true_coef  = randn(K, samplesize);
     for ind = 1:samplesize
