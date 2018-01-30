@@ -20,7 +20,7 @@ for trial = 1:n_trials
         perturb = randn(1, K);
         perturb(j) = 0;
         perturb = perturb / norm(perturb, 2) * slope;
-        m = m + perturb;
+        m = max(min(m + perturb, 1), -1);
         if max(abs(m))>=1
             warning('the maximum of m is %.1f > 1, consider a small slope.',max(abs(m)));
         end

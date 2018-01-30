@@ -7,6 +7,7 @@ max_dist = 0;
 K = size(coef, 1);
 N = size(coef, 2);
 dict = dict + slope*randn(size(dict));%permute the dictionary
+dict = dict * diag(1./sqrt(sum(dict.^2, 1))); %normalize
 for j = 1:K
     % Check rank condition
     % Preparation

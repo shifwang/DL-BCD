@@ -74,7 +74,7 @@ for iter = 1:MAXTRIAL
         best_dict = dict;
         best_coef = coef;
     end
-    if summary.max_dist < 1e-9
+    if summary.max_dist < 1e-3
         break;
     end
 end

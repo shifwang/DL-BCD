@@ -277,7 +277,7 @@ summary.timing = toc(start);
 % check if the obtained dictionary is indeed the reference dictionary
 if options.is_sharp
     slope = 1e-2;
-    [max_dist, testtime] = is_sharp(coef, dict, slope, thres1, thres2, verbose);
+    [max_dist, testtime] = is_sharp2(coef, dict, slope, thres1, thres2, verbose);
 end
 %summary
 summary.perturb = slope;
