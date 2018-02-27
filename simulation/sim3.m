@@ -28,7 +28,7 @@ for i = 1:N
         @(q) 20*log10(norm(true_dict -...
             q * find_permutation(true_dict,q),'fro')/norm(true_dict,'fro'));
     data       = true_dict * true_coef;
-    [dict, coef, out] = DL_BCD_global(data, 5, 'L1', .5);
+    [dict, coef, out] = DL_BCD_global(data, 5, 'rand', .5);
     dist(i, j) = dictionary_error_function(dict);
     testtime1(i, j) = out.timing;
     iter1(i, j) = out.iter;
@@ -38,6 +38,8 @@ end
 disp(dist);
 disp(iter1);
 disp(testtime1);
+%%
+loglog(success(:), dist(:), '*')
 %%
 subplot(1,2,1)
 hist(iter1)

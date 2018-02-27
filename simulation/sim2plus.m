@@ -37,3 +37,6 @@ middles = [middles, round(-para(2)/para(1))];
 disp(middles)
 end
 
+%%
+load('important_files.mat')
+plot(10:5:5*(length(middles)+1),middles, '*')
