@@ -132,6 +132,9 @@ for iter = 1:MAXITER
         end
         x(j) = 1;
         m = dict(:, j)' * dict;
+        if max(abs(m)) > 1.01
+            warning('m is wrong, is dictionary scaled properly?')
+        end
         m(j) = 0;
         obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
         %Update dual vector
@@ -151,7 +154,7 @@ for iter = 1:MAXITER
             for inner_iter = 1:1000
                 if verbose > 1
                     if mod(inner_iter, 100) == 0
-                        fprintf('feature %d, inner iter : %d', j, inner_iter)
+                        fprintf('feature %d, inner iter : %d', j, inner_iter);
                     end
                 end
                 tmp = x * coef;
@@ -161,6 +164,9 @@ for iter = 1:MAXITER
                 grad2 = (x - m) ./ sqrt((x - m).^2 + 1 - m.^2) .* obj_per_feature';
                 grad2(j) = -grad1(j); % avoid singularity
                 grad = grad1 + grad2;
+                if any(~isreal(grad(1)))
+                    error('gradient should not be real numbers but complex numbers obtained.');
+                end
                 if inner_iter > 1
                     yk = grad - old_grad;
                     sk = x - xold;
@@ -168,7 +174,7 @@ for iter = 1:MAXITER
                         AA = yk' * yk / (yk * sk') - (B * sk') * sk * B'/ (sk * B * sk');
                     else
                         if verbose > 2
-                            warning('yk*sk is negative')
+                            warning('yk*sk is negative');
                         end
                         AA = 0;
                     end
@@ -243,7 +249,7 @@ for iter = 1:MAXITER
                 end
             end
         else
-            error('Optimization method not recognized')
+            error('Optimization method not recognized');
         end
         if verbose > 1
             fprintf('stepsize:%6.3e, inner_iter:%d, max gradient:%6.3e',stepsize, inner_iter, max(abs(grad)));
@@ -278,8 +284,11 @@ summary.timing = toc(start);
 if options.is_sharp
     slope = 1e-2;
     [max_dist, testtime] = is_sharp2(coef, dict, slope, thres1, thres2, verbose);
+    summary.perturb = slope;
+    summary.max_dist = max_dist;
+    summary.test_timing = testtime;
+end
+if ~isreal(dict(1,1))
+    error('dictionary should be real numbers, something is wrong.');
 end
 %summary
-summary.perturb = slope;
-summary.max_dist = max_dist;
-summary.test_timing = testtime;

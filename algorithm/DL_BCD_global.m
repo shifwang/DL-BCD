@@ -74,7 +74,9 @@ for iter = 1:MAXTRIAL
         best_dict = dict;
         best_coef = coef;
     end
-    if summary.max_dist < 1e-3
+    if summary.max_dist < 1e-10 
+        %This thresholding is set substentially smaller than sim1 because
+        %  we are testing against optimized local minimum (There is overfitting effect on the stability).
         break;
     end
 end
