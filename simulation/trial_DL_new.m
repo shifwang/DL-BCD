@@ -12,56 +12,6 @@ function results = trial_DL_new(optIn)
 %Add paths
 setup_DL
 
-%Test case
-if nargin == 0
-    clc
-    
-    %Handle random seed
-    defaultStream = RandStream.getGlobalStream;
-    if 1
-        savedState = defaultStream.State;
-        save random_state.mat savedState;
-    else
-        load random_state.mat %#ok<UNRCH>
-    end
-    defaultStream.State = savedState;
-    
-    %Flags to test BiG-AMP variants
-    optIn.tryBigampEM = 1;
-    
-    %Flags to turn on comparison algorithms
-    optIn.tryKsvd = 0;
-    optIn.tryErspud = 0;
-    optIn.trySpams = 0;
-
-    
-    %Problem dimensions
-    optIn.M = 20; %size of signal
-    optIn.N = optIn.M; %size of dictionary
-    optIn.L = ceil(5*optIn.N*log(optIn.N)); %From Spielman et al.
-    
-    
-    %Specify dictionary usage
-    optIn.K = 5;
-    
-    %Specify maximum allowed trials
-    optIn.maxTrials = 1;
-    
-    %SNR
-    optIn.SNR = inf;
-    
-    %Specify coding mode (0 for OMP, 1 for TST)
-    %The specified function is used to compute a coding error for the
-    %resulting dictionary for each algorithm. TST may be significantly
-    %slower.
-    optIn.useTST = 0;
-    
-    %Precondition option (enable to use a preconditioner for EM-BiG-AMP)
-    optIn.precondition = 0;
-    
-    
-end
-
 %% Problem Setup
 
 %Turn algs on/off
@@ -85,10 +35,10 @@ precondition = optIn.precondition;
 maxTrials = optIn.maxTrials;
 
 %Define problem dimensions
-M = optIn.M;
-L = optIn.L;
-N = optIn.N;
-K = optIn.K;
+M = optIn.M; % dimension
+L = optIn.L; % sample size
+N = optIn.N; % equal to M
+K = optIn.K; % number of non-zero entries in coef
 
 %Set options
 opt = BiGAMPOpt; %initialize the options object
@@ -108,7 +58,7 @@ if false
     mu = optIn.mu;
     A = (ones(M,N)*mu + (1 - mu)*eye(M))^.5; %WARN: I have changed this part.
 else
-    A = randn(M, N);
+    A = randn(M, N); % default is to use random ref dictionary
 end
 
 %Normalize the columns
@@ -127,13 +77,13 @@ dictionary_error_function =...
 if optIn.pos == 1
     X = abs(randn(N,L)); %WARN: I changed this to be non-negative !
 else
-    X = randn(N,L);
+    X = randn(N,L); % default
 end
 for ll = 1:L
     yada = randperm(N);
     yada2 = zeros(N,1);
     yada2(yada(1:K)) = 1;
-    X(:,ll) = X(:,ll) .* yada2;
+    X(:,ll) = X(:,ll) .* yada2; % coef is sparse Gaussian.
 end
 
 
@@ -141,7 +91,7 @@ end
 %% Form the output channel
 
 %Compute noise free output
-Z = A*X;
+Z = A*X; % Z is the noise free signal.
 
 %Define the error function
 error_function = @(qval) 20*log10(norm(qval - Z,'fro') / norm(Z,'fro'));
@@ -267,7 +217,7 @@ if trySpams
             SPAMSerror = SPAMSerrorTemp;
             bestSPAMSerror = SPAMSerror;
             A_spams = A_spamsTemp;
-            disp(['Updating Solution. Error was: '...
+            disp(['Updating Solution. SPAMS Error was: '...
                 num2str(SPAMSerror) ' dB'])
         end
         
@@ -300,7 +250,7 @@ if tryBCD1
     A_bcd = DL_BCD_global(Y, maxTrials, 'L1', .5);
     BCDerror = dictionary_error_function(A_bcd);
     tbcd = toc(tstart);
-    disp(['Updating Solution. BCD Error was: '...
+    disp(['Updating Solution. BCD \tau=.5 Error was: '...
           num2str(BCDerror) ' dB'])
     %Save results
     loc = length(results) + 1;
@@ -324,7 +274,7 @@ if tryBCD2
     tstart = tic;
     A_bcd2 = DL_BCD_global(Y, maxTrials, 'rand', inf);
     BCD2error = dictionary_error_function(A_bcd2);
-    disp(['Updating Solution. BCD Error was: '...
+    disp(['Updating Solution. BCD infty Error was: '...
           num2str(BCD2error) ' dB'])
     tbcd2 = toc(tstart);
     
@@ -395,7 +345,7 @@ if tryKsvd
             bestKSVDerror = err_ksvdtemp(end);
             err_ksvd = err_ksvdtemp;
             A_ksvd = A_ksvdtemp;
-            disp(['Updating Solution. Error was: '...
+            disp(['Updating Solution. KSVD Error was: '...
                 num2str(10*log10(err_ksvd(end)/norm(Z,'fro')^2))])
         end
         
