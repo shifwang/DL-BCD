@@ -100,6 +100,7 @@ summary.perturb = nan;
 summary.max_dist = nan;
 summary.test_timing = nan;
 
+dual = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%    Main Body        %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,7 +122,9 @@ for iter = 1:MAXITER
             ratio = options.subsample + (1 - options.subsample)/MAXITER * iter;
             coef = coef(:,randi(N, 1, floor(N * ratio)));
         end
-            
+        if dual
+            dual_norms = sqrt(sum(invD.^2));
+        end
         % Preparation
         if iter == 1
             %add a small noise around initial dict
@@ -130,13 +133,22 @@ for iter = 1:MAXITER
         else
             x = zeros(1, K);
         end
-        x(j) = 1;
+        if dual
+            x(j) = dual_norms(j);
+        else
+            x(j) = 1;
+        end
         m = dict(:, j)' * dict;
         if max(abs(m)) > 1.01
             warning('m is wrong, is dictionary scaled properly?')
         end
         m(j) = 0;
-        obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
+        if dual
+            obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N .* dual_norms';
+            obj_per_feature(j) = obj_per_feature(j) / dual_norms(j);
+        else
+            obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
+        end
         %Update dual vector
         % Formulation for j = 1: minimize
         %   E| c1 + c2 x2 + ... + cK xK| + E|c2| sqrt((x2 - m2)^2 + 1 -
@@ -262,6 +274,10 @@ for iter = 1:MAXITER
                 invD(h,:) = invD(h,:) * sqrt((x(h) - m(h))^2 + 1 - m(h)^2);
             end
         end
+        if dual
+            dict = normalize(invD^-1);
+            invD = dict^-1;
+        end
         coef = invD * data;
         dict = inv(invD);
         obj  = sum(sum(min(abs(coef), thres2)))/N;
@@ -274,7 +290,7 @@ for iter = 1:MAXITER
     summary.obj_val(iter) = obj;
     summary.n_zero(iter) = mean(mean(abs(coef) < thres1));
     if iter > 1
-        if summary.obj_val(iter-1) - summary.obj_val(iter) < ABSTOL
+        if ~dual && summary.obj_val(iter-1) - summary.obj_val(iter) < ABSTOL
             break;
         end
     end
