@@ -94,6 +94,7 @@ summary = struct();
 summary.obj_val = nan(1, MAXITER);
 summary.n_zero = nan(1, MAXITER);
 summary.flag = nan(K, MAXITER);
+summary.decrease = nan(K, MAXITER);
 summary.timing = nan;
 summary.verbose = verbose;
 summary.perturb = nan;
@@ -121,7 +122,7 @@ for iter = 1:MAXITER
             ratio = options.subsample + (1 - options.subsample)/MAXITER * iter;
             coef = coef(:,randi(N, 1, floor(N * ratio)));
         end
-            
+        start_obj = sum(sum(min(abs(coef), thres2)))/N;  
         % Preparation
         if iter == 1
             %add a small noise around initial dict
@@ -137,6 +138,7 @@ for iter = 1:MAXITER
         end
         m(j) = 0;
         obj_per_feature = sum(abs(coef).*(abs(coef) < thres2), 2)/N;
+        
         %Update dual vector
         % Formulation for j = 1: minimize
         %   E| c1 + c2 x2 + ... + cK xK| + E|c2| sqrt((x2 - m2)^2 + 1 -
@@ -267,6 +269,7 @@ for iter = 1:MAXITER
         obj  = sum(sum(min(abs(coef), thres2)))/N;
         % summary
         summary.flag(j, iter) = flag;
+        summary.decrease(j, iter) = start_obj - obj;
     end
     if verbose > 0
         fprintf('objective %6.3e', obj);
